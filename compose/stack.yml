@@ -1,0 +1,44 @@
+version: '3'
+services:
+  vprodb:
+    image: vprofile/vprofiledb:V1
+    ports:
+      - "3306:3306"
+    volumes:
+      - vprodbdata:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=vprodbpass
+    
+  vprocache01:
+    image: memcached
+    ports:
+      - "11211:11211"
+    depends_on: 
+     - vprodb
+
+  vproapp:
+    image: vprofile/vprofileapp:V1
+    ports:
+      - "8080:8080"
+    volumes: 
+      - vproappdata:/usr/local/tomcat/webapps
+    depends_on: 
+     - vprocache01
+    deploy: 
+     replicas: 2 
+
+  vproweb:
+    image: vprofile/vprofileweb:V1
+    ports:
+      - "80:80"
+    deploy: 
+     replicas: 1
+     placement:
+      constraints:
+       - node.hostname == worker
+    depends_on: 
+     - vproapp
+
+volumes:
+  vprodbdata: {}
+  vproappdata: {}
